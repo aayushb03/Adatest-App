@@ -8,11 +8,12 @@ from .views import *
 
 
 @api_view(['POST'])
-def generate_perturbations(request, topic):
+def generate_perturbations(request, topic, session_id):
     """
     Generates perturbations for the provided topic and stores them in the database
     :param request: list of tests to perturb
     :param topic: current statement topic
+    :param session_id: current session id
     :return: All perturbations for the provided topic
     """
 
@@ -22,10 +23,10 @@ def generate_perturbations(request, topic):
     for test in tests:
         # Get test and list of perts for the test
         testData = Test.objects.get(id=test["id"])
-        pertList = Perturbation.objects.filter(test_parent=testData)
+        pertList = Perturbation.objects.filter(test_parent=testData, session_id=session_id)
 
         # Generate default perts for the test
-        for perturb_type, pipeline in pert_pipeline_map.items():
+        for perturb_type, pipeline in pert_pipeline_map[session_id].items():
             if pertList.filter(type=perturb_type).exists():
                 continue
 
@@ -35,7 +36,7 @@ def generate_perturbations(request, topic):
             else:
                 perturbed_test = testData.title
 
-            perturbed_label = check_lab(topic, perturbed_test)
+            perturbed_label = check_lab(topic, perturbed_test, session_id)
 
             if (perturb_type in ["negation", "antonyms"]) ^ (testData.ground_truth == "acceptable"):
                 perturbed_gt = "acceptable"
@@ -55,21 +56,21 @@ def generate_perturbations(request, topic):
 
             perturbData = Perturbation(test_parent=testData, label=perturbed_label, id=perturbed_id,
                                        title=perturbed_test, type=perturb_type, validity=perturbed_validity, topic=topic,
-                                       ground_truth=perturbed_gt)
+                                       ground_truth=perturbed_gt, session_id=session_id)
             perturbData.save()
 
         # Generate custom perts for the test (if applicable)
-        for perturb_type, perturb_options in custom_pert_pipeline_map.items():
+        for perturb_type, perturb_options in custom_pert_pipeline_map[session_id].items():
             if pertList.filter(type=perturb_type).exists():
                 continue
 
-            if custom_pipeline[0] is not None:
-                perturbed_test = custom_pipeline[0](f'{perturb_options["prompt"]}: {testData.title}')
-                perturbed_test = perturbed_test[0]['generated_text']
+            if custom_pipeline[session_id] is not None:
+                perturbed_test = custom_pipeline[session_id](f'{perturb_options["prompt"]}: {testData.title}')
+                perturbed_test = perturbed_test[session_id]['generated_text']
             else:
                 perturbed_test = testData.title
 
-            perturbed_label = check_lab(topic, perturbed_test)
+            perturbed_label = check_lab(topic, perturbed_test, session_id)
 
             if (perturb_options["flip_label"]) ^ (testData.ground_truth == "acceptable"):
                 perturbed_gt = "acceptable"
@@ -89,28 +90,28 @@ def generate_perturbations(request, topic):
 
             perturbData = Perturbation(test_parent=testData, label=perturbed_label, id=perturbed_id,
                                        title=perturbed_test, type=perturb_type, validity=perturbed_validity, topic=topic,
-                                       ground_truth=perturbed_gt)
+                                       ground_truth=perturbed_gt, session_id=session_id)
             perturbData.save()
 
-    allPerturbs = Perturbation.objects.all()
+    allPerturbs = Perturbation.objects.filter(session_id=session_id)
     serializer = PerturbationSerializer(allPerturbs, context={'request': request}, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
-def get_perturbations(request):
+def get_perturbations(request, session_id):
     """
     Getter for perts
     :param request: None
     :return: All perturbations in the database
     """
-    data = Perturbation.objects.all()
+    data = Perturbation.objects.filter(session_id=session_id)
     serializer = PerturbationSerializer(data, context={'request': request}, many=True)
     return Response(serializer.data)
 
 
 @api_view(['POST'])
-def edit_perturbation(request, topic):
+def edit_perturbation(request, topic, session_id):
     """
     Edits a perturbation in the database
     :param request: Perturbation to be edited
@@ -122,7 +123,7 @@ def edit_perturbation(request, topic):
     test = json.loads(request.body.decode('utf-8'))['test']
 
     # Generate AI label
-    new_label = check_lab(topic, test['title'])
+    new_label = check_lab(topic, test['title'], session_id)
 
     # Get perturbation from db and update fields
     perturbTest = Perturbation.objects.get(id=test["id"])
@@ -133,17 +134,18 @@ def edit_perturbation(request, topic):
     perturbTest.save()
 
     # Get all tests and return them
-    test = Perturbation.objects.all()
+    test = Perturbation.objects.filter(session_id=session_id)
     serializer = PerturbationSerializer(test, context={'request': request}, many=True)
     return Response(serializer.data)
 
 
 @api_view(['POST'])
-def validate_perturbations(request, validation):
+def validate_perturbations(request, validation, session_id):
     """
     Validates a list of perturbations and updates their fields accordingly
     :param request: list of perturbations to validate
     :param validation: type of validation to apply
+    :param session_id: current session id
     :return: All perturbations in the database
     """
 
@@ -169,13 +171,13 @@ def validate_perturbations(request, validation):
         perturbData.save()
 
     # Return all perts
-    allPerts = Perturbation.objects.all()
+    allPerts = Perturbation.objects.filter(session_id=session_id)
     serializer = PerturbationSerializer(allPerts, context={'request': request}, many=True)
     return Response(serializer.data)
 
 
 @api_view(['POST'])
-def add_new_pert(request):
+def add_new_pert(request, session_id):
     """
     Adds a new pert type to the db and generates perturbations for the given tests
     :param request: new pert type to add (tests, prompt, flip_label, name)
@@ -191,14 +193,14 @@ def add_new_pert(request):
     flip_label = new_pert['flip_label']
     pert_name = new_pert['pert_name']
 
-    if pert_name in custom_pert_pipeline_map.keys() or pert_name in pert_pipeline_map.keys():
+    if pert_name in custom_pert_pipeline_map[session_id].keys() or pert_name in pert_pipeline_map[session_id].keys():
         return Response("Invalid perturbation type", status=status.HTTP_400_BAD_REQUEST)
 
     if pert_name in default_pert_pipeline_map:
-        pipeline = pert_pipeline_map[pert_name]
+        pipeline = pert_pipeline_map[session_id][pert_name]
     else:
-        custom_pert_pipeline_map[pert_name] = {"name": pert_name, "prompt": prompt, "flip_label": flip_label}
-        pipeline = custom_pipeline[0]
+        custom_pert_pipeline_map[session_id][pert_name] = {"name": pert_name, "prompt": prompt, "flip_label": flip_label}
+        pipeline = custom_pipeline[session_id]
 
     for test in test_list:
         id = test["id"]
@@ -208,12 +210,12 @@ def add_new_pert(request):
             if pert_name in default_pert_pipeline_map:
                 perturbed_test = pipeline(testData.title)
             else:
-                perturbed_test = custom_pipeline[0](f'{prompt}: {testData.title}')
+                perturbed_test = custom_pipeline[session_id](f'{prompt}: {testData.title}')
             perturbed_test = perturbed_test[0]['generated_text']
         else:
             perturbed_test = testData.title
 
-        perturbed_label = check_lab(testData.topic, perturbed_test)
+        perturbed_label = check_lab(testData.topic, perturbed_test, session_id)
 
         if flip_label ^ (testData.ground_truth == "acceptable"):
             perturbed_gt = "acceptable"
@@ -229,16 +231,16 @@ def add_new_pert(request):
 
         perturbData = Perturbation(test_parent=testData, label=perturbed_label, id=perturbed_id,
                                    title=perturbed_test, type=pert_name, validity=perturbed_validity, topic=testData.topic,
-                                   ground_truth=perturbed_gt)
+                                   ground_truth=perturbed_gt, session_id=session_id)
         perturbData.save()
 
-    data = Perturbation.objects.all()
+    data = Perturbation.objects.filter(session_id=session_id)
     serializer = PerturbationSerializer(data, context={'request': request}, many=True)
     return Response(serializer.data)
 
 
 @api_view(['POST'])
-def test_new_pert(request):
+def test_new_pert(request, session_id):
     """
     Tests a new perturbation type
     :param request: {statement: str, prompt: str, pert_name: str}
@@ -252,8 +254,8 @@ def test_new_pert(request):
     test_case = data['test_case']
     prompt = data['prompt']
 
-    if custom_pipeline[0] is not None:
-        perturbed_test = custom_pipeline[0](f'{prompt}: {test_case}')
+    if custom_pipeline[session_id] is not None:
+        perturbed_test = custom_pipeline[session_id](f'{prompt}: {test_case}')
         perturbed_test = perturbed_test[0]['generated_text']
     else:
         perturbed_test = test_case
@@ -262,7 +264,7 @@ def test_new_pert(request):
 
 
 @api_view(['DELETE'])
-def delete_perturbation(request):
+def delete_perturbation(request, session_id):
     """
     Deletes a perturbation from the database
     :param request: needs json object with pert_name in body
@@ -273,46 +275,47 @@ def delete_perturbation(request):
     pert_name = pert['pert_name']
 
     # Get perturbation and delete it
-    if pert_name in pert_pipeline_map:
-        del pert_pipeline_map[pert_name]
-        Perturbation.objects.filter(type=pert_name).delete()
+    if pert_name in pert_pipeline_map[session_id]:
+        del pert_pipeline_map[session_id][pert_name]
+        Perturbation.objects.filter(type=pert_name, session_id=session_id).delete()
 
-    if pert_name in custom_pert_pipeline_map:
-        del custom_pert_pipeline_map[pert_name]
-        Perturbation.objects.filter(type=pert_name).delete()
+    if pert_name in custom_pert_pipeline_map[session_id]:
+        del custom_pert_pipeline_map[session_id][pert_name]
+        Perturbation.objects.filter(type=pert_name, session_id=session_id).delete()
 
     # Return all perts
-    allPerts = Perturbation.objects.all()
+    allPerts = Perturbation.objects.filter(session_id=session_id)
     serializer = PerturbationSerializer(allPerts, context={'request': request}, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
-def get_perturbation_type(request, pert_type):
+def get_perturbation_type(request, pert_type, session_id):
     """
     Getter for perturbation types
     :param request: None
     :param pert_type: type of perturbation to get
+    :param session_id: current session id
     :return: The info of the perturbation type
     """
-    if pert_type in custom_pert_pipeline_map:
-        custom_pert_pipeline_map[pert_type]["prompt"] = custom_pert_pipeline_map[pert_type]["prompt"].replace(". Only reply with the revised text and do not add comments", "")
-        return Response(custom_pert_pipeline_map[pert_type])
-    elif pert_type in pert_pipeline_map:
+    if pert_type in custom_pert_pipeline_map[session_id]:
+        custom_pert_pipeline_map[session_id][pert_type]["prompt"] = custom_pert_pipeline_map[session_id][pert_type]["prompt"].replace(". Only reply with the revised text and do not add comments", "")
+        return Response(custom_pert_pipeline_map[session_id][pert_type])
+    elif pert_type in pert_pipeline_map[session_id]:
         return Response({"name": pert_type, "prompt": "Default", "flip_label": pert_type == "negation" or pert_type == "antonyms"})
     else:
         return Response("Invalid perturbation type", status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
-def get_all_perturbation_types(request):
+def get_all_perturbation_types(request, session_id):
     """
     Getter for perturbation types
     :param request: None
     :param pert_type: type of perturbation to get
     :return: The info of the perturbation type
     """
-    pert_types = list(pert_pipeline_map.keys()) + list(custom_pert_pipeline_map.keys())
+    pert_types = list(pert_pipeline_map[session_id].keys()) + list(custom_pert_pipeline_map[session_id].keys())
     return Response(pert_types)
 
 

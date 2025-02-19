@@ -9,8 +9,11 @@ import { TestDataContext } from "@/lib/TestContext";
 import RadioButtons from "@/app/components/RadioButtons";
 import Buttons from "@/app/components/Buttons";
 import { fetchTests } from "@/lib/utils";
+import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
+  const [sessionIdSet, setSessionIdSet] = useState(false);
+
   // Boolean for if the tests are being generated
   const [isGenerating, setIsGenerating] = useState(false);
   // Boolean for if perturbations are being generated
@@ -42,9 +45,20 @@ export default function Home() {
   } = useContext(TestDataContext);
 
   /**
+   * Generate session ID for the user
+   */
+  useEffect(() => {
+    if (!localStorage.getItem("sessionId")) {
+      localStorage.setItem("sessionId", uuidv4());
+    }
+    setSessionIdSet(true);
+  }, []);
+
+  /**
    * Load in new tests when they are changed
    */
   useEffect(() => {
+    if (!localStorage.getItem("sessionId")) return;
     fetchTests(
       filterMap,
       currentTopic,
@@ -54,12 +68,13 @@ export default function Home() {
       setIsCurrent,
       setCurrentTopic,
     ).catch();
-  }, [isCurrent, currentTopic, filterMap, isAutoCheck, isPerturbing]);
+  }, [isCurrent, currentTopic, filterMap, isAutoCheck, isPerturbing, sessionIdSet]);
 
   /**
    * Update displayed tests when the topic changes
    */
   useEffect(() => {
+    if (!localStorage.getItem("sessionId")) return;
     let newTestsData: testDataType = {
       tests: testData.tests,
       currentTests: testData.tests[currentTopic],
@@ -70,7 +85,7 @@ export default function Home() {
     getPrompt(currentTopic).then((prompt) => {
       setTopicPrompt(prompt);
     });
-  }, [currentTopic, isCurrent]);
+  }, [currentTopic, isCurrent, sessionIdSet]);
 
   /**
    * Generate tests for the current topic

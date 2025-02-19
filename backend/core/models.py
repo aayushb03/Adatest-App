@@ -7,6 +7,7 @@ from django.db import models
 
 class Test(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
+    session_id = models.CharField(max_length=50, default="unknown")
     title = models.TextField()
     topic = models.CharField(max_length=50)
     validity = models.CharField(max_length=50, default="unapproved")
@@ -15,6 +16,7 @@ class Test(models.Model):
 
 
 class Log(models.Model):
+    session_id = models.CharField(max_length=50, default="unknown")
     test_ids = models.TextField()
     action = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -25,6 +27,7 @@ class Perturbation(models.Model):
     test_parent = models.ForeignKey(Test, on_delete=models.CASCADE)
     label = models.CharField(max_length=20, default="unacceptable")
     id = models.UUIDField(max_length=50, default=uuid.uuid4, editable=False, primary_key=True)
+    session_id = models.CharField(max_length=50, default="unknown")
     title = models.TextField()
     type = models.CharField(max_length=20, default="spelling")
     topic = models.CharField(max_length=50)

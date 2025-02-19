@@ -30,19 +30,10 @@ MODEL_TYPE = os.getenv('MODEL')
 cu0_pipeline = CUPipeline("CU0")
 cu5_pipeline = CUPipeline("CU5")
 
-grader_pipelines = {
-    # "LCE": lce_pipeline,
-    # "PE": pe_pipeline,
-    # "KE": ke_pipeline,
-    "CU0": cu0_pipeline,
-    "CU5": cu5_pipeline,
-}
+# pipelines for graders and prompts (access with grades_pipelines[session_id][topic])
+grader_pipelines = {}
+grader_prompts = {}
 
-grader_prompts = {
-    "CU0": "",
-    "CU5": "",
-    "Food": "",
-}
 
 # HELPER FUNCTIONS
 def generate_random_id():
@@ -51,28 +42,30 @@ def generate_random_id():
     return random_id
 
 
-def check_lab(type, inp):
+def check_lab(type, inp, session_id):
     """
     Checks AI Grade for test
     :param type: type/topic of pipeline
     :param inp: test input
+    :param session_id: session id
     :return: acceptable/unacceptable
     """
-    if type not in grader_pipelines.keys():
+    if type not in grader_pipelines[session_id].keys():
         return 'unacceptable'
 
-    lab = grader_pipelines[type](inp)
+    lab = grader_pipelines[session_id][type](inp)
     return lab[0].lower() if lab[0].lower() in ['acceptable', 'unacceptable'] else 'unacceptable'
 
 
 def index(request):
     return render_nextjs_page_sync(request)
 
-####### mode: AIBAT, MINI-AIBAT, M-AIBAT
-appConfig = ["AIBAT"]
 
-gen_pipeline = [None]
-custom_pipeline = [None]
+# mode: AIBAT, MINI-AIBAT, M-AIBAT
+appConfig = {}
+
+gen_pipeline = {}
+custom_pipeline = {}
 pert_pipeline_map = {
     # will fill up with perturbations
 }
@@ -105,21 +98,22 @@ df_map = {}
 
 # create default vals in db
 @api_view(['POST'])
-def init_database(request):
-    for top, pipe in grader_pipelines.items():
-        obj_map[top] = create_obj(model=gen_pipeline[0], essayPipeline=pipe, type=f"{top}_esp" if (appConfig[0] == "M-AIBAT" and "CU" in top) else top)
-        df_map[top] = obj_map[top].df
+def init_database(request, session_id):
+    for top, pipe in grader_pipelines[session_id].items():
+        obj_map[session_id][top] = create_obj(model=gen_pipeline[session_id], essayPipeline=pipe,
+                                              type=f"{top}_esp" if (appConfig[session_id] == "M-AIBAT" and "CU" in top) else top)
+        df_map[session_id][top] = obj_map[session_id][top].df
         # PE KE LCE for this user study will have no tests
-        data = obj_map[top].df
+        data = obj_map[session_id][top].df
         for i, row in data.iterrows():
             if row['input'] == '':
                 continue
-            obj = Test(id=i, title=row['input'], topic=top, label=check_lab(top, row['input']))
+            obj = Test(id=i, title=row['input'], topic=top, label=check_lab(top, row['input'], session_id), session_id=session_id)
             obj.save()
 
     return Response("All initial tests loaded!")
 
 
 @api_view(['GET'])
-def get_app_config(request):
-    return Response(appConfig[0])
+def get_app_config(request, session_id):
+    return Response(appConfig[session_id])
