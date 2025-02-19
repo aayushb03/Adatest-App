@@ -121,7 +121,7 @@ export async function resetDB(config: "AIBAT" | "Mini-AIBAT" | "M-AIBAT") {
       method: 'DELETE',
       cache: 'no-store',
     });
-    await fetch('core/tests/init', {
+    await fetch(`core/tests/init/${localStorage.getItem("sessionId")}`, {
       method: 'POST',
       cache: 'no-store'
     });
