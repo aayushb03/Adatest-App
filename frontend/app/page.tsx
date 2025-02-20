@@ -52,9 +52,12 @@ export default function Home() {
       localStorage.setItem("sessionId", uuidv4());
     }
     checkSession().then((data) => {
-      console.log(data);
+      if (!data) {
+        resetDB('AIBAT').then(() => setSessionIdSet(true));
+      } else {
+        setSessionIdSet(true);
+      }
     });
-    setSessionIdSet(true);
   }, []);
 
   /**
