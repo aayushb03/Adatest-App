@@ -117,3 +117,8 @@ def init_database(request, session_id):
 @api_view(['GET'])
 def get_app_config(request, session_id):
     return Response(appConfig[session_id])
+
+
+@api_view(['GET'])
+def check_session(request, session_id):
+    return Response(session_id in appConfig, status=200)

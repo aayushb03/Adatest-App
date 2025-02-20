@@ -3,7 +3,7 @@
 import TestList from "@/app/components/TestList";
 import TaskGraph from "@/app/components/TaskGraph";
 import {useState, useEffect, useContext} from "react";
-import {generateTests, getPrompt, resetDB} from "@/lib/Service";
+import {checkSession, generateTests, getPrompt, resetDB} from "@/lib/Service";
 import {testDataType} from "@/lib/Types";
 import {TestDataContext} from "@/lib/TestContext";
 import RadioButtons from "@/app/components/RadioButtons";
@@ -51,7 +51,9 @@ export default function Home() {
     if (!localStorage.getItem("sessionId")) {
       localStorage.setItem("sessionId", uuidv4());
     }
-    resetDB('AIBAT').catch();
+    checkSession().then((data) => {
+      console.log(data);
+    });
     setSessionIdSet(true);
   }, []);
 

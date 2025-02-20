@@ -1,5 +1,18 @@
 import { perturbedTestType, testType } from "@/lib/Types";
 
+export async function checkSession() {
+  const url = `core/session/check/${localStorage.getItem("sessionId")}`;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      cache: "no-store",
+    });
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export async function getAppConfig() {
   const url = `core/config/get/${localStorage.getItem("sessionId")}`;
   try {
