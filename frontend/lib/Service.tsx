@@ -14,7 +14,7 @@ export async function checkSession() {
 }
 
 export async function getAppConfig() {
-  const url = `core/config/get/${localStorage.getItem("sessionId")}`;
+  const url = `core/session/get/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',

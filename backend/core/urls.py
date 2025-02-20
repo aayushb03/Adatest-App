@@ -7,8 +7,8 @@ urlpatterns = [
     path('', index, name='index'),
     path('', include("django_nextjs.urls")),
 
-    path('core/config/get/<str:session_id>', views.get_app_config),
-    path('core/config/check/<str:session_id>', views.check_session),
+    path('core/session/get/<str:session_id>', views.get_app_config),
+    path('core/session/check/<str:session_id>', views.check_session),
 
     # Test endpoints (api_views/tests.py)
     path('core/tests/get/<str:topic>/<str:session_id>', tests.get_by_topic),
