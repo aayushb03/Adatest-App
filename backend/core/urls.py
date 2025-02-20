@@ -21,9 +21,9 @@ urlpatterns = [
     path('core/tests/process/<str:decision>/<str:topic>/<str:session_id>', tests.process_list),
 
     # Log endpoints (api_views/logs.py)
-    path('core/logs/add', logs.log_action),
-    path('core/logs/clear', logs.log_clear),
-    path('core/logs/save', logs.save_log),
+    path('core/logs/add/<str:session_id>', logs.log_action),
+    path('core/logs/clear/<str:session_id>', logs.log_clear),
+    path('core/logs/save/<str:session_id>', logs.save_log),
 
     # Perturbation endpoints (api_views/perturbations.py)
     path('core/perturbations/generate/<str:topic>/<str:session_id>', perturbations.generate_perturbations),

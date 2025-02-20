@@ -75,7 +75,7 @@ export async function processTests(tests: testType[], decision: string, topic: s
 
 
 export async function logAction(test_ids: string[], action: string) {
-  const url = `core/logs/add`;
+  const url = `core/logs/add/${localStorage.getItem("sessionId")}`;
   let tests = ""
   test_ids.forEach((test_id) => {
     tests += test_id + ","
@@ -99,7 +99,7 @@ export async function logAction(test_ids: string[], action: string) {
 }
 
 export async function saveLogs() {
-  const url = `core/logs/save`;
+  const url = `core/logs/save/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'POST',
