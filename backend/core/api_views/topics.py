@@ -46,6 +46,7 @@ def add_topic(request, session_id):
     df_map[session_id][new_topic] = obj_map[session_id][new_topic].df
 
     for i, row in df_map[session_id][new_topic].head(11).iterrows():
+        print(row)
         if row['input'] == '':
             continue
 
