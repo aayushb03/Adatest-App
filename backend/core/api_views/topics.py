@@ -28,7 +28,7 @@ def add_topic(request, session_id):
         )
 
     directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Tests'))
-    file_path = os.path.join(directory, f'NTX_{new_topic}.csv')
+    file_path = os.path.join(directory, f'NTX_{new_topic}_{session_id}.csv')
 
     # write to csv file
     with open(file_path, mode='w', newline='') as file:
@@ -42,7 +42,7 @@ def add_topic(request, session_id):
     else:
         grader_pipelines[session_id][new_topic] = cu0_pipeline
 
-    obj_map[session_id][new_topic] = create_obj(model=gen_pipeline[session_id], essayPipeline=grader_pipelines[new_topic], type=new_topic)
+    obj_map[session_id][new_topic] = create_obj(model=gen_pipeline[session_id], essayPipeline=grader_pipelines[new_topic], type=f'{new_topic}_{session_id}')
     df_map[session_id][new_topic] = obj_map[session_id][new_topic].df
 
     for i, row in df_map[session_id][new_topic].head(11).iterrows():
