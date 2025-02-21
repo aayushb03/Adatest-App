@@ -104,7 +104,7 @@ To retrieve these files, you will need to use the scp command.
 
 In the same directory as the adatest.pem file, run the following command:
 ```
-scp -i adatest.pem -r ubuntu@<address>:/home/ubuntu/Adatest/Adatest-App/backend/log.csv <destination in local>
+scp -i adatest.pem -r ubuntu@<address>:/home/ubuntu/Adatest/Adatest-App/backend/logs <destination in local>
 ```
 You will need to replace the "address" with the address of the VM and "destination in local" with the location 
 you want to save the log file to on your local computer. This command saves the file "log.csv" to the location you specify,
