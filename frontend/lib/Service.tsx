@@ -111,8 +111,8 @@ export async function logAction(test_ids: string[], action: string) {
   }
 }
 
-export async function saveLogs() {
-  const url = `core/logs/save/${localStorage.getItem("sessionId")}`;
+export async function saveLogs(name: string) {
+  const url = `core/logs/save/${localStorage.getItem("sessionId")}/${name}`;
   try {
     await fetch(url, {
       method: 'POST',

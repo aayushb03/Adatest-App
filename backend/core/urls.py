@@ -24,7 +24,7 @@ urlpatterns = [
     # Log endpoints (api_views/logs.py)
     path('core/logs/add/<str:session_id>', logs.log_action),
     path('core/logs/clear/<str:session_id>', logs.log_clear),
-    path('core/logs/save/<str:session_id>', logs.save_log),
+    path('core/logs/save/<str:session_id>/<str:name>', logs.save_log),
 
     # Perturbation endpoints (api_views/perturbations.py)
     path('core/perturbations/generate/<str:topic>/<str:session_id>', perturbations.generate_perturbations),

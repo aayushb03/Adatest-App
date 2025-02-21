@@ -26,8 +26,8 @@ def log_action(request, session_id):
 
 
 @api_view(['POST'])
-def save_log(request, session_id):
-    save_dir = os.path.join(os.getcwd(), "logs", str(session_id))
+def save_log(request, session_id, name):
+    save_dir = os.path.join(os.getcwd(), "logs", f'{name}_{str(session_id)}')
     os.makedirs(save_dir, exist_ok=True)
 
     # Save Log table to CSV
