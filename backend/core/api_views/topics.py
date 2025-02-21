@@ -42,11 +42,10 @@ def add_topic(request, session_id):
     else:
         grader_pipelines[session_id][new_topic] = cu0_pipeline
 
-    obj_map[session_id][new_topic] = create_obj(model=gen_pipeline[session_id], essayPipeline=grader_pipelines[new_topic], type=f'{new_topic}_{session_id}')
+    obj_map[session_id][new_topic] = create_obj(model=gen_pipeline[session_id], essayPipeline=grader_pipelines[session_id][new_topic], type=f'{new_topic}_{session_id}')
     df_map[session_id][new_topic] = obj_map[session_id][new_topic].df
 
     for i, row in df_map[session_id][new_topic].head(11).iterrows():
-        print(row)
         if row['input'] == '':
             continue
 
