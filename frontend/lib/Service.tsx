@@ -132,7 +132,7 @@ export async function saveLogs(name: string) {
  */
 export async function resetDB(config: "AIBAT" | "Mini-AIBAT" | "M-AIBAT") {
   try {
-    const result = await fetch(`${BASE_URL}/core/tests/clear/${config}/${localStorage.getItem("sessionId")}`, {
+    await fetch(`${BASE_URL}/core/tests/clear/${config}/${localStorage.getItem("sessionId")}`, {
       method: 'DELETE',
       cache: 'no-store',
     });
@@ -409,7 +409,9 @@ export async function getTopics() {
       method: 'GET',
       cache: "no-store",
     });
-    return await res.json();
+    const r = await res.json();
+    console.log(r)
+    return r;
   } catch (error) {
     console.error(error);
   }

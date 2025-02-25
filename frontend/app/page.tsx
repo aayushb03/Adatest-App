@@ -10,6 +10,7 @@ import RadioButtons from "@/app/components/RadioButtons";
 import Buttons from "@/app/components/Buttons";
 import {fetchTests} from "@/lib/utils";
 import {v4 as uuidv4} from "uuid";
+import {ThreeDots} from "react-loading-icons";
 
 export default function Home() {
   const [sessionIdSet, setSessionIdSet] = useState(false);
@@ -48,6 +49,7 @@ export default function Home() {
    * Generate session ID for the user
    */
   useEffect(() => {
+    if (sessionIdSet) return;
     if (!localStorage.getItem("sessionId")) {
       localStorage.setItem("sessionId", uuidv4());
     }
@@ -64,7 +66,7 @@ export default function Home() {
    * Load in new tests when they are changed
    */
   useEffect(() => {
-    if (!localStorage.getItem("sessionId")) return;
+    if (!sessionIdSet) return;
     fetchTests(
       filterMap,
       currentTopic,
@@ -80,7 +82,7 @@ export default function Home() {
    * Update displayed tests when the topic changes
    */
   useEffect(() => {
-    if (!localStorage.getItem("sessionId")) return;
+    if (!sessionIdSet) return;
     let newTestsData: testDataType = {
       tests: testData.tests,
       currentTests: testData.tests[currentTopic],
@@ -105,6 +107,19 @@ export default function Home() {
 
   return (
     <div className={"grid grid-cols-4"}>
+      {!sessionIdSet &&
+        <div className={"flex flex-col items-center justify-center h-screen w-screen"}>
+          <ThreeDots
+            height="80"
+            width="80"
+            radius="9"
+            fill="black"
+          />
+          <div className={"text-3xl font-bold"}>
+            Booting System... Click end session to reset tests.
+          </div>
+        </div>
+      }
       {sessionIdSet && <>
         <div
           className={
