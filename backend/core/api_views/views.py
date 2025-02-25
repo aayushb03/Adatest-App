@@ -121,4 +121,4 @@ def get_app_config(request, session_id):
 
 @api_view(['GET'])
 def check_session(request, session_id):
-    return Response({'valid': session_id in appConfig}, status=200)
+    return Response(session_id in appConfig, status=200)
