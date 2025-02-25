@@ -6,7 +6,7 @@ from .views import *
 
 
 @api_view(['POST'])
-def add_topic(request):
+def add_topic(request, session_id):
     """
     Adds a new topic to the database
     :param request: topic and tests: {topic: str, tests: [{test: str, ground_truth: str}]}
@@ -28,38 +28,38 @@ def add_topic(request):
         )
 
     directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Tests'))
-    file_path = os.path.join(directory, f'NTX_{new_topic}.csv')
+    file_path = os.path.join(directory, f'NTX_{new_topic}_{session_id}.csv')
 
     # write to csv file
     with open(file_path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(new_data)  # Writing all rows including the header
 
-    grader_prompts[new_topic] = new_prompt_topic
+    grader_prompts[session_id][new_topic] = new_prompt_topic
 
     if MODEL_TYPE == "mistral":
-        grader_pipelines[new_topic] = GeneralGraderPipeline(llama_model, llama_tokenizer, task=new_prompt_topic)
+        grader_pipelines[session_id][new_topic] = GeneralGraderPipeline(llama_model, llama_tokenizer, task=new_prompt_topic)
     else:
-        grader_pipelines[new_topic] = cu0_pipeline
+        grader_pipelines[session_id][new_topic] = cu0_pipeline
 
-    obj_map[new_topic] = create_obj(model=gen_pipeline[0], essayPipeline=grader_pipelines[new_topic], type=new_topic)
-    df_map[new_topic] = obj_map[new_topic].df
+    obj_map[session_id][new_topic] = create_obj(model=gen_pipeline[session_id], essayPipeline=grader_pipelines[session_id][new_topic], type=f'{new_topic}_{session_id}')
+    df_map[session_id][new_topic] = obj_map[session_id][new_topic].df
 
-    for i, row in df_map[new_topic].head(11).iterrows():
+    for i, row in df_map[session_id][new_topic].head(11).iterrows():
         if row['input'] == '':
             continue
 
-        label = check_lab(new_topic, row['input'])
+        label = check_lab(new_topic, row['input'], session_id)
         validity = 'approved' if label == row['output'] else 'denied'
         obj = Test(id=i, title=row['input'], validity=validity, topic=new_topic, label=label,
-                   ground_truth=row['output'])
+                   ground_truth=row['output'], session_id=session_id)
         obj.save()
 
     return Response("Topic added successfully!")
 
 
 @api_view(['DELETE'])
-def delete_topic(request):
+def delete_topic(request, session_id):
     """
     Deletes a topic from the database
     :param request: topic: str
@@ -69,31 +69,31 @@ def delete_topic(request):
     top = data['topic']
 
     # delete all tests for the topic
-    Perturbation.objects.filter(topic=top).delete()
-    Test.objects.filter(topic=top).delete()
-    del grader_pipelines[top]
-    del obj_map[top]
-    del df_map[top]
+    Perturbation.objects.filter(topic=top, session_id=session_id).delete()
+    Test.objects.filter(topic=top, session_id=session_id).delete()
+    del grader_pipelines[session_id][top]
+    del obj_map[session_id][top]
+    del df_map[session_id][top]
 
     return Response("Topic deleted successfully!")
 
 
 @api_view(['GET'])
-def get_topics(request):
+def get_topics(request, session_id):
     """
     Gets all topics from the db
     :return: All topic names
     """
-    return Response(grader_pipelines.keys())
+    return Response(grader_pipelines[session_id].keys())
 
 @api_view(['GET'])
-def get_topic_prompt(request, topic):
+def get_topic_prompt(request, topic, session_id):
     """
     Gets the prompt for a topic
     :param request: topic: str
     :return: The prompt for the topic
     """
-    return Response(grader_prompts[topic])
+    return Response(grader_prompts[session_id][topic])
 
 
 @api_view(['POST'])

@@ -74,10 +74,10 @@ function RadioButtons({ isAutoCheck, setIsAutoCheck }: RadioButtonsProps) {
     }
   }, [isCurrent]);
 
-  async function resetTests(config: "AIBAT" | "Mini-AIBAT" | "M-AIBAT") {
+  async function resetTests(config: "AIBAT" | "Mini-AIBAT" | "M-AIBAT", name: string) {
     await logAction(["null"], 'Resetting Tests');
     setIsResetting(true);
-    await saveLogs();
+    await saveLogs(name);
     await resetDB(config);
     const newTestData = { ...testData };
     newTestData.tests = {};

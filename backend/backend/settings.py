@@ -26,8 +26,13 @@ SECRET_KEY = 'django-insecure-j4a0f(qvj!#ro66*q@vor=vyo_*6-1+jh6z5pt_8tkb1^u(g5j
 DEBUG = True
 
 # To allow ngrok to connect
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.ngrok-free.app']
 
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://factually-selected-dassie.ngrok-free.app",
+]
 
 # Application definition
 

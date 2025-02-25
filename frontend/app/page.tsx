@@ -2,15 +2,19 @@
 
 import TestList from "@/app/components/TestList";
 import TaskGraph from "@/app/components/TaskGraph";
-import { useState, useEffect, useContext } from "react";
-import {generateTests, getPrompt} from "@/lib/Service";
-import { testDataType } from "@/lib/Types";
-import { TestDataContext } from "@/lib/TestContext";
+import {useState, useEffect, useContext} from "react";
+import {checkSession, generateTests, getPrompt, resetDB} from "@/lib/Service";
+import {testDataType} from "@/lib/Types";
+import {TestDataContext} from "@/lib/TestContext";
 import RadioButtons from "@/app/components/RadioButtons";
 import Buttons from "@/app/components/Buttons";
-import { fetchTests } from "@/lib/utils";
+import {fetchTests} from "@/lib/utils";
+import {v4 as uuidv4} from "uuid";
+import {ThreeDots} from "react-loading-icons";
 
 export default function Home() {
+  const [sessionIdSet, setSessionIdSet] = useState(false);
+
   // Boolean for if the tests are being generated
   const [isGenerating, setIsGenerating] = useState(false);
   // Boolean for if perturbations are being generated
@@ -42,9 +46,27 @@ export default function Home() {
   } = useContext(TestDataContext);
 
   /**
+   * Generate session ID for the user
+   */
+  useEffect(() => {
+    if (sessionIdSet) return;
+    if (!localStorage.getItem("sessionId")) {
+      localStorage.setItem("sessionId", uuidv4());
+    }
+    checkSession().then((data) => {
+      if (!data) {
+        resetDB('AIBAT').then(() => setSessionIdSet(true));
+      } else {
+        setSessionIdSet(true);
+      }
+    });
+  }, []);
+
+  /**
    * Load in new tests when they are changed
    */
   useEffect(() => {
+    if (!sessionIdSet) return;
     fetchTests(
       filterMap,
       currentTopic,
@@ -54,12 +76,13 @@ export default function Home() {
       setIsCurrent,
       setCurrentTopic,
     ).catch();
-  }, [isCurrent, currentTopic, filterMap, isAutoCheck, isPerturbing]);
+  }, [isCurrent, currentTopic, filterMap, isAutoCheck, isPerturbing, sessionIdSet]);
 
   /**
    * Update displayed tests when the topic changes
    */
   useEffect(() => {
+    if (!sessionIdSet) return;
     let newTestsData: testDataType = {
       tests: testData.tests,
       currentTests: testData.tests[currentTopic],
@@ -70,7 +93,7 @@ export default function Home() {
     getPrompt(currentTopic).then((prompt) => {
       setTopicPrompt(prompt);
     });
-  }, [currentTopic, isCurrent]);
+  }, [currentTopic, isCurrent, sessionIdSet]);
 
   /**
    * Generate tests for the current topic
@@ -84,35 +107,50 @@ export default function Home() {
 
   return (
     <div className={"grid grid-cols-4"}>
-      <div
-        className={
-          "col-span-1 p-4 h-screen justify-center w-full border-gray-500 border"
-        }
-      >
-        <TaskGraph />
-      </div>
-      <main className="col-span-3 flex w-full h-screen flex-col items-center">
-        {/* HEADER */}
-        <div className={"px-4 w-full h-20 flex gap-2 items-center py-1"}>
-          <span className={"text-3xl font-light"}>Topic:</span>
-          <RadioButtons
-            isAutoCheck={isAutoCheck}
-            setIsAutoCheck={setIsAutoSelect}
+      {!sessionIdSet &&
+        <div className={"flex flex-col items-center justify-center h-screen w-screen"}>
+          <ThreeDots
+            height="80"
+            width="80"
+            radius="9"
+            fill="black"
           />
+          <div className={"text-3xl font-bold"}>
+            Booting System... Click end session to reset tests.
+          </div>
         </div>
-        <div className={"px-4 w-full py-1 h-24 flex items-center gap-2"}>
-          <div className={"font-bold"}>Prompt:</div>
-          <div className={"italic"}>&quot;{topicPrompt}&quot;</div>
+      }
+      {sessionIdSet && <>
+        <div
+          className={
+            "col-span-1 p-4 h-screen justify-center w-full border-gray-500 border"
+          }
+        >
+          <TaskGraph/>
         </div>
-        <TestList filterMap={filterMap} setFilterMap={setFilterMap} />
-        <Buttons
-          currentTopic={currentTopic}
-          isGenerating={isGenerating}
-          genTests={onGenerateTests}
-          isPerturbing={isPerturbing}
-          setIsPerturbing={setIsPerturbing}
-        />
-      </main>
+        <main className="col-span-3 flex w-full h-screen flex-col items-center">
+          {/* HEADER */}
+          <div className={"px-4 w-full h-20 flex gap-2 items-center py-1"}>
+            <span className={"text-3xl font-light"}>Topic:</span>
+            <RadioButtons
+              isAutoCheck={isAutoCheck}
+              setIsAutoCheck={setIsAutoSelect}
+            />
+          </div>
+          <div className={"px-4 w-full py-1 h-24 flex items-center gap-2"}>
+            <div className={"font-bold"}>Prompt:</div>
+            <div className={"italic"}>&quot;{topicPrompt}&quot;</div>
+          </div>
+          <TestList filterMap={filterMap} setFilterMap={setFilterMap}/>
+          <Buttons
+            currentTopic={currentTopic}
+            isGenerating={isGenerating}
+            genTests={onGenerateTests}
+            isPerturbing={isPerturbing}
+            setIsPerturbing={setIsPerturbing}
+          />
+        </main>
+      </>}
     </div>
   );
 }
