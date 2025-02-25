@@ -1,7 +1,9 @@
 import { perturbedTestType, testType } from "@/lib/Types";
 
+const BASE_URL = "https://factually-selected-dassie.ngrok-free.app";
+
 export async function checkSession() {
-  const url = `core/session/check/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/session/check/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -14,7 +16,7 @@ export async function checkSession() {
 }
 
 export async function getAppConfig() {
-  const url = `core/session/get/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/session/get/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -32,7 +34,7 @@ export async function getAppConfig() {
   * @returns An array of tests
   */
 export async function getTests(topic: string) {
-  const url = `core/tests/get/${topic}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/tests/get/${topic}/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       cache: "no-store",
@@ -54,7 +56,7 @@ export async function getTests(topic: string) {
   * @returns all tests for the topic
   */
 export async function generateTests(topic: string) {
-  const url = `core/tests/post/${topic}/${localStorage.getItem("sessionId")}`
+  const url = `${BASE_URL}/core/tests/post/${topic}/${localStorage.getItem("sessionId")}`
   try {
     await fetch(url, {
       method: 'POST',
@@ -75,7 +77,7 @@ export async function generateTests(topic: string) {
  */
 export async function processTests(tests: testType[], decision: string, topic: string) {
   if (tests.length === 0) return;
-  const url = `core/tests/process/${decision}/${topic}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/tests/process/${decision}/${topic}/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'POST',
@@ -88,7 +90,7 @@ export async function processTests(tests: testType[], decision: string, topic: s
 
 
 export async function logAction(test_ids: string[], action: string) {
-  const url = `core/logs/add/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/logs/add/${localStorage.getItem("sessionId")}`;
   let tests = ""
   test_ids.forEach((test_id) => {
     tests += test_id + ","
@@ -112,7 +114,7 @@ export async function logAction(test_ids: string[], action: string) {
 }
 
 export async function saveLogs(name: string) {
-  const url = `core/logs/save/${localStorage.getItem("sessionId")}/${name}`;
+  const url = `${BASE_URL}/core/logs/save/${localStorage.getItem("sessionId")}/${name}`;
   try {
     await fetch(url, {
       method: 'POST',
@@ -130,11 +132,11 @@ export async function saveLogs(name: string) {
  */
 export async function resetDB(config: "AIBAT" | "Mini-AIBAT" | "M-AIBAT") {
   try {
-    await fetch(`core/tests/clear/${config}/${localStorage.getItem("sessionId")}`, {
+    const result = await fetch(`${BASE_URL}/core/tests/clear/${config}/${localStorage.getItem("sessionId")}`, {
       method: 'DELETE',
       cache: 'no-store',
     });
-    await fetch(`core/tests/init/${localStorage.getItem("sessionId")}`, {
+    await fetch(`${BASE_URL}/core/tests/init/${localStorage.getItem("sessionId")}`, {
       method: 'POST',
       cache: 'no-store'
     });
@@ -150,7 +152,7 @@ export async function resetDB(config: "AIBAT" | "Mini-AIBAT" | "M-AIBAT") {
   */
 export async function createPerturbations(tests: testType[], topic: string) {
   if (tests.length === 0) return;
-  const url = `core/perturbations/generate/${topic}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/generate/${topic}/${localStorage.getItem("sessionId")}`;
   try {
     const perturbations = await fetch(url, {
       method: 'POST',
@@ -172,7 +174,7 @@ export async function createPerturbations(tests: testType[], topic: string) {
   * @returns An array of perturbations
   */
 export async function getPerturbations() {
-  const url = `core/perturbations/get/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/get/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -190,7 +192,7 @@ export async function getPerturbations() {
 }
 
 export async function getDefaultPerturbations(appConfig: string) {
-  const url = `core/perturbations/getDefault/${appConfig}`;
+  const url = `${BASE_URL}/core/perturbations/getDefault/${appConfig}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -210,7 +212,7 @@ export async function getDefaultPerturbations(appConfig: string) {
  * @param groundTruth
  */
 export async function addTest(test: testType, topic: string, groundTruth: string) {
-  const url = `core/tests/add/${topic}/${groundTruth}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/tests/add/${topic}/${groundTruth}/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'POST',
@@ -230,7 +232,7 @@ export async function addTest(test: testType, topic: string, groundTruth: string
  * @param topic
  */
 export async function editTest(test: testType | perturbedTestType, topic: string, isPert: boolean = false) {
-  const url = `core/${isPert ? 'perturbations' : 'tests'}/edit/${topic}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/${isPert ? 'perturbations' : 'tests'}/edit/${topic}/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'POST',
@@ -250,7 +252,7 @@ export async function editTest(test: testType | perturbedTestType, topic: string
  * @param validation Approved, Denied, Invalid
  */
 export async function validatePerturbations(tests: perturbedTestType[], validation: string) {
-  const url = `core/perturbations/validate/${validation}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/validate/${validation}/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'POST',
@@ -274,7 +276,7 @@ export async function validatePerturbations(tests: perturbedTestType[], validati
  * @returns List of perturbed tests
  */
 export async function addNewPerturbation(tests: testType[], type: string, prompt: string, testDirection: string) {
-  const url = `core/perturbations/add/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/add/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -304,7 +306,7 @@ export async function addNewPerturbation(tests: testType[], type: string, prompt
  * @returns A perturbed test object
  */
 export async function testNewPerturbation(type: string, prompt: string, statement: string, direction: string) {
-  const url = `core/perturbations/test/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/test/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -330,7 +332,7 @@ export async function testNewPerturbation(type: string, prompt: string, statemen
  * @returns all perturbations
  */
 export async function deletePerturbation(type: string) {
-  const url = `core/perturbations/delete/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/delete/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'DELETE',
@@ -353,7 +355,7 @@ export async function deletePerturbation(type: string) {
  * @returns A perturbation type object
  */
 export async function getPerturbationInfo(type: string) {
-  const url = `core/perturbations/getType/${type}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/getType/${type}/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -370,7 +372,7 @@ export async function getPerturbationInfo(type: string) {
  * @returns An array of perturbation types
  */
 export async function getAllPerturbationTypes() {
-  const url = `core/perturbations/getAll/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/perturbations/getAll/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -401,7 +403,7 @@ export async function editPerturbation(tests: testType[], type: string, prompt: 
  * @returns A string array of topics
  */
 export async function getTopics() {
-  const url = `core/topics/get/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/topics/get/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -419,7 +421,7 @@ export async function getTopics() {
  * @returns A string of the prompt
  */
 export async function getPrompt(topic: string) {
-  const url = `core/topics/prompt/${topic}/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/topics/prompt/${topic}/${localStorage.getItem("sessionId")}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -438,7 +440,7 @@ export async function getPrompt(topic: string) {
  * @param tests List of tests to add in the format {test: string, ground_truth: string}
  */
 export async function addTopic(topic: string, prompt_topic: string, tests: { test: string, ground_truth: string }[]) {
-  const url = `core/topics/add/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/topics/add/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'POST',
@@ -457,7 +459,7 @@ export async function addTopic(topic: string, prompt_topic: string, tests: { tes
  * @param topic Topic to delete
  */
 export async function deleteTopic(topic: string) {
-  const url = `core/topics/delete/${localStorage.getItem("sessionId")}`;
+  const url = `${BASE_URL}/core/topics/delete/${localStorage.getItem("sessionId")}`;
   try {
     await fetch(url, {
       method: 'DELETE',
@@ -478,7 +480,7 @@ export async function deleteTopic(topic: string) {
  * @returns A test object
  */
 export async function testTopicPrompt(prompt: string, test: string) {
-  const url = 'core/topics/test';
+  const url = `${BASE_URL}/core/topics/test`;
   try {
     const res = await fetch(url, {
       method: 'POST',
